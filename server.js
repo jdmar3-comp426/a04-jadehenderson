@@ -12,7 +12,7 @@ app.use(express.json());
 // Set server port
 var HTTP_PORT = 5000
 // Start server
-app.listen(HTTP_PORT, () => {
+const server = app.listen(HTTP_PORT, () => {
     console.log("Server running on port %PORT%".replace("%PORT%",HTTP_PORT))
 });
 // READ (HTTP method GET) at root endpoint /app/
@@ -27,7 +27,7 @@ app.get("/app/", (req, res, next) => {
 app.post("/app/new/", (req, res) => {
 	const stmt = db.prepare("INSERT INTO userinfo (user, pass) VALUES (?, ?)");
 	const info = stmt.run(req.body.user, md5(req.body.pass));
-	res.status(201).json({"message" : info.changes+ " record created: ID " +info.lastInsertRowid + "(201)"});
+	res.status(201).json({"message" : info.changes+ " record created: ID " +info.lastInsertRowid + " (201)"});
 });
 
 // READ a list of all users (HTTP method GET) at endpoint /app/users/
@@ -40,8 +40,8 @@ app.get("/app/users", (req, res) => {
 // READ a single user (HTTP method GET) at endpoint /app/user/:id
 // use req.params.id !!
 app.get("/app/user/:id", (req, res) => {
-	const stmt = db.prepare("SELECT * FROM userinfo WHERE id = ?");
-	const info = stmt.get(req.params.id);
+	const stmt = db.prepare("SELECT * FROM userinfo WHERE id = ?").get(req.params.id);
+	// const info = stmt.get(req.params.id);
 	res.status(201).json(stmt);
 });
 
@@ -49,7 +49,7 @@ app.get("/app/user/:id", (req, res) => {
 //use req.params.id !!
 app.patch("/app/update/user/:id", (req, res) => {
 	const stmt = db.prepare("UPDATE userinfo SET user = COALESCE(?,user), pass = COALESCE(?,pass) WHERE id = ?");
-	const info = stmt.run(req.params.id, req.params.id);
+	const info = stmt.run(req.params.id, req.params.id, req.params.id);
 	res.status(200).json({"message" : info.changes+ " record updated: ID " +info.lastInsertRowid + "(200)"});
 });
 
@@ -57,7 +57,7 @@ app.patch("/app/update/user/:id", (req, res) => {
 app.delete("/app/delete/user/:id", (req, res) => {
 	const stmt = db.prepare("DELETE FROM userinfo WHERE id = ?");
 	const info = stmt.run(req.params.id);
-	res.status(200).json({"message" : info.changes+ " record deleted: ID " +info.lastInsertRowid + "(200)"});
+	res.status(200).json({"message" : info.changes+ " record deleted: ID " +info.lastInsertRowid + " (200)"});
 });
 
 // Default response for any other request
@@ -66,3 +66,10 @@ app.use(function(req, res){
 	res.json({"message":"Endpoint not found. (404)"});
     res.status(404);
 });
+
+// tell STDOUT that server is stopped
+process.on('SIGTERM', () => {
+	server.close(() => {
+		console.log('Server stopped.');
+	});
+}); 
